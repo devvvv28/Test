@@ -151,7 +151,10 @@ const AdminMenu = () => {
       if (result.success) {
         addNotification(`${files.length} image(s) uploaded successfully`, 'success');
         setShowImageModal(false);
+        // Refresh both tables and dashboard data
         loadTables();
+        // Trigger a refresh of the overview page if it's loaded
+        window.dispatchEvent(new CustomEvent('tablesUpdated'));
       } else {
         addNotification(result.message || 'Failed to upload images', 'error');
       }
@@ -294,7 +297,7 @@ const AdminMenu = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center sticky top-0 bg-gray-50 py-4 z-30">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
           <p className="text-gray-600">Manage your restaurant's menu items and pricing</p>
@@ -320,27 +323,47 @@ const AdminMenu = () => {
       {/* Tables Section */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Tables (Showing 3 most recent)</h2>
-          <span className="text-sm text-gray-500">Total Tables: {tables.length}</span>
+          <h2 className="text-lg font-semibold text-gray-900">Restaurant Tables</h2>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-500">Total Tables: {tables.length}</span>
+            <button
+              onClick={loadTables}
+              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            >
+              Refresh
+            </button>
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {tables.slice(0, 3).map((table) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tables.map((table) => (
             <div key={table.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-              <div className="relative h-32 bg-gray-100">
-                {table.primary_image ? (
+              <div className="relative h-40 bg-gray-100">
+                {table.thumbnail_image ? (
                   <img
-                    src={`http://localhost:5000${table.primary_image}`}
+                    src={`http://localhost:5000${table.thumbnail_image}`}
+                    alt={`Table ${table.table_number}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : table.images && table.images.length > 0 ? (
+                  <img
+                    src={`http://localhost:5000${table.images[0].image_path}`}
                     alt={`Table ${table.table_number}`}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Table className="w-8 h-8 text-gray-400" />
+                    <div className="text-center">
+                      <Table className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-xs text-gray-500">No image</p>
+                    </div>
                   </div>
                 )}
-                <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
-                  {table.image_count} photos
+                <div className="absolute top-2 right-2 bg-black/70 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-medium">
+                  {table.image_count || 0} photos
+                </div>
+                <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium">
+                  #{table.table_number}
                 </div>
               </div>
               

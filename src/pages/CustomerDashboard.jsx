@@ -9,12 +9,45 @@ import NotificationToast from '../components/NotificationToast';
 const CustomerDashboard = () => {
   const { user, logout } = useAuth();
   const { restaurants } = useData();
+  const [recentTables, setRecentTables] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCuisine, setSelectedCuisine] = useState('all');
   const [favorites, setFavorites] = useState([]);
 
   const cuisines = ['all', 'Fine Dining', 'Japanese', 'Italian', 'Indian', 'Mexican'];
 
+  useEffect(() => {
+    loadRecentTables();
+  }, []);
+
+  const loadRecentTables = async () => {
+    try {
+      // Load tables from all restaurants to show recent ones
+      const allTables = [];
+      for (const restaurant of restaurants) {
+        try {
+          const response = await fetch(`http://localhost:5000/api/restaurants/${restaurant.id}/tables`);
+          const result = await response.json();
+          if (result.success && result.data) {
+            const tablesWithRestaurant = result.data.map(table => ({
+              ...table,
+              restaurant_name: restaurant.name,
+              restaurant_id: restaurant.id
+            }));
+            allTables.push(...tablesWithRestaurant);
+          }
+        } catch (error) {
+          console.error(`Failed to load tables for restaurant ${restaurant.id}:`, error);
+        }
+      }
+      
+      // Sort by creation date and take the 3 most recent
+      const sortedTables = allTables.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setRecentTables(sortedTables.slice(0, 3));
+    } catch (error) {
+      console.error('Failed to load recent tables:', error);
+    }
+  };
   const filteredRestaurants = restaurants.filter(restaurant => {
     const matchesSearch = restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          restaurant.cuisine.toLowerCase().includes(searchTerm.toLowerCase());
@@ -120,6 +153,60 @@ const CustomerDashboard = () => {
       {/* Restaurants Grid */}
       <section className="py-8 md:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Recent Tables Section */}
+          {recentTables.length > 0 && (
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Recently Added Tables</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {recentTables.map((table) => (
+                  <div key={`${table.restaurant_id}-${table.id}`} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                    <div className="relative h-48">
+                      {table.primary_image ? (
+                        <img
+                          src={`http://localhost:5000${table.primary_image}`}
+                          alt={`Table ${table.table_number}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : table.images && table.images.length > 0 ? (
+                        <img
+                          src={`http://localhost:5000${table.images[0].image_path}`}
+                          alt={`Table ${table.table_number}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                              <span className="text-2xl font-bold text-gray-600">#{table.table_number}</span>
+                            </div>
+                            <p className="text-sm text-gray-500">Table {table.table_number}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {table.capacity} seats
+                      </div>
+                      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                        {table.restaurant_name}
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Table {table.table_number}</h3>
+                      <p className="text-gray-600 text-sm mb-3">{table.type} • {table.capacity} guests</p>
+                      <Link
+                        to={`/restaurant/${table.restaurant_id}/booking`}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 text-center font-medium flex items-center justify-center space-x-2"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>Book This Table</span>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
             {filteredRestaurants.map(restaurant => (
               <div key={restaurant.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 md:hover:-translate-y-2">
