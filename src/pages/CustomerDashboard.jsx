@@ -18,6 +18,17 @@ const CustomerDashboard = () => {
 
   useEffect(() => {
     loadRecentTables();
+    
+    // Listen for table updates from admin panel
+    const handleTablesUpdated = () => {
+      loadRecentTables();
+    };
+    
+    window.addEventListener('tablesUpdated', handleTablesUpdated);
+    
+    return () => {
+      window.removeEventListener('tablesUpdated', handleTablesUpdated);
+    };
   }, []);
 
   const loadRecentTables = async () => {

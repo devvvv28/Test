@@ -295,9 +295,9 @@ const AdminMenu = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center sticky top-0 bg-gray-50 py-4 z-30">
+      <div className="flex justify-between items-center sticky top-0 bg-gray-50 py-4 z-30 -mx-8 px-8 border-b border-gray-200">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
           <p className="text-gray-600">Manage your restaurant's menu items and pricing</p>
