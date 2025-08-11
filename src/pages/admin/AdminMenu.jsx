@@ -295,9 +295,9 @@ const AdminMenu = () => {
   }
 
   return (
-    <div className="space-y-6 min-h-screen">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center sticky top-0 bg-gray-50 py-4 z-30 -mx-8 px-8 border-b border-gray-200">
+      <div className="flex justify-between items-center sticky top-0 bg-gray-50 py-4 z-30">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
           <p className="text-gray-600">Manage your restaurant's menu items and pricing</p>
@@ -843,8 +843,14 @@ const AdminMenu = () => {
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <p className="text-xs text-gray-500 mt-1">You can select multiple images at once. First image will be the thumbnail.</p>
+                    <p className="text-xs text-gray-500 mt-1">You can select multiple images at once. First image will be the primary thumbnail.</p>
                   </div>
+                  {uploadingImages && (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="text-sm text-gray-600">Uploading images...</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
