@@ -1,21 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useNotification } from '../../context/NotificationContext';
-import { 
-  ChefHat, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Search, 
-  Filter,
-  Star,
-  Eye,
-  EyeOff,
-  Table,
-  Upload,
-  Image as ImageIcon,
-  X
-} from 'lucide-react';
+import { ChefHat, Plus, CreditCard as Edit, Trash2, Search, Filter, Star, Eye, EyeOff, Table, Upload, Image as ImageIcon, X } from 'lucide-react';
 
 const AdminMenu = () => {
   const { apiCall } = useAdminAuth();

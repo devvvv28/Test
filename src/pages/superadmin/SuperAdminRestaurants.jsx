@@ -1,19 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSuperAdminAuth } from '../../context/SuperAdminAuthContext';
 import { useNotification } from '../../context/NotificationContext';
-import { 
-  Building, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Star,
-  MapPin,
-  Phone,
-  Users,
-  DollarSign
-} from 'lucide-react';
+import { Building, Search, Plus, CreditCard as Edit, Trash2, Eye, Star, MapPin, Phone, Users, DollarSign } from 'lucide-react';
 
 const SuperAdminRestaurants = () => {
   const { apiCall } = useSuperAdminAuth();
