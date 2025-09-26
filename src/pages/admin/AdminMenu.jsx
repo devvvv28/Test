@@ -249,7 +249,6 @@ const AdminMenu = () => {
         setNewItem({
           name: '',
           category: '',
-          cuisine: '',
           price: '',
           description: '',
           image: '',

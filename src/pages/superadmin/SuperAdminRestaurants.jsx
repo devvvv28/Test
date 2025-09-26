@@ -25,6 +25,18 @@ const SuperAdminRestaurants = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [newRestaurant, setNewRestaurant] = useState({
+    name: '',
+    cuisine: '',
+    address: '',
+    phone: '',
+    description: '',
+    image: '',
+    admin_id: '',
+    admin_password: ''
+  });
 
   useEffect(() => {
     loadRestaurants();
@@ -100,6 +112,53 @@ const SuperAdminRestaurants = () => {
     }
   };
 
+  const handleAddRestaurant = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await apiCall('/super-admin/restaurants', {
+        method: 'POST',
+        body: newRestaurant
+      });
+
+      if (response.success) {
+        addNotification('Restaurant added successfully', 'success');
+        setShowAddModal(false);
+        setNewRestaurant({
+          name: '',
+          cuisine: '',
+          address: '',
+          phone: '',
+          description: '',
+          image: '',
+          admin_id: '',
+          admin_password: ''
+        });
+        loadRestaurants();
+      }
+    } catch (error) {
+      addNotification(error.message || 'Failed to add restaurant', 'error');
+    }
+  };
+
+  const handleEditRestaurant = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await apiCall(`/super-admin/restaurants/${selectedRestaurant.id}`, {
+        method: 'PUT',
+        body: selectedRestaurant
+      });
+
+      if (response.success) {
+        addNotification('Restaurant updated successfully', 'success');
+        setShowEditModal(false);
+        setSelectedRestaurant(null);
+        loadRestaurants();
+      }
+    } catch (error) {
+      addNotification(error.message || 'Failed to update restaurant', 'error');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -117,6 +176,13 @@ const SuperAdminRestaurants = () => {
           <p className="text-gray-600">Oversee all restaurants on the platform</p>
         </div>
         <button className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-yellow-700 hover:to-orange-700 transition-all duration-300 flex items-center space-x-2">
+          <Plus className="w-5 h-5" />
+          <span>Add Restaurant</span>
+        </button>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white px-6 py-3 rounded-lg hover:from-yellow-700 hover:to-orange-700 transition-all duration-300 flex items-center space-x-2"
+        >
           <Plus className="w-5 h-5" />
           <span>Add Restaurant</span>
         </button>
@@ -229,6 +295,15 @@ const SuperAdminRestaurants = () => {
                 >
                   {restaurant.is_active ? 'Deactivate' : 'Activate'}
                 </button>
+                <button
+                  onClick={() => {
+                    setSelectedRestaurant(restaurant);
+                    setShowEditModal(true);
+                  }}
+                  className="bg-gray-50 text-gray-600 py-2 px-3 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -317,10 +392,264 @@ const SuperAdminRestaurants = () => {
                 >
                   Close
                 </button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <button
+                  onClick={() => {
+                    setShowDetails(false);
+                    setShowEditModal(true);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
                   Edit Restaurant
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Restaurant Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Restaurant</h3>
+              <form onSubmit={handleAddRestaurant} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Restaurant Name *</label>
+                    <input
+                      type="text"
+                      value={newRestaurant.name}
+                      onChange={(e) => setNewRestaurant({...newRestaurant, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cuisine Type *</label>
+                    <select
+                      value={newRestaurant.cuisine}
+                      onChange={(e) => setNewRestaurant({...newRestaurant, cuisine: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    >
+                      <option value="">Select cuisine</option>
+                      <option value="Fine Dining">Fine Dining</option>
+                      <option value="Italian">Italian</option>
+                      <option value="Japanese">Japanese</option>
+                      <option value="Chinese">Chinese</option>
+                      <option value="Mexican">Mexican</option>
+                      <option value="Indian">Indian</option>
+                      <option value="Thai">Thai</option>
+                      <option value="French">French</option>
+                      <option value="Mediterranean">Mediterranean</option>
+                      <option value="American">American</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                  <input
+                    type="text"
+                    value={newRestaurant.address}
+                    onChange={(e) => setNewRestaurant({...newRestaurant, address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                    <input
+                      type="tel"
+                      value={newRestaurant.phone}
+                      onChange={(e) => setNewRestaurant({...newRestaurant, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                    <input
+                      type="url"
+                      value={newRestaurant.image}
+                      onChange={(e) => setNewRestaurant({...newRestaurant, image: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={newRestaurant.description}
+                    onChange={(e) => setNewRestaurant({...newRestaurant, description: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    placeholder="Brief description of the restaurant"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Admin ID *</label>
+                    <input
+                      type="text"
+                      value={newRestaurant.admin_id}
+                      onChange={(e) => setNewRestaurant({...newRestaurant, admin_id: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      placeholder="e.g., RES001"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Admin Password *</label>
+                    <input
+                      type="password"
+                      value={newRestaurant.admin_password}
+                      onChange={(e) => setNewRestaurant({...newRestaurant, admin_password: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                  >
+                    Add Restaurant
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Restaurant Modal */}
+      {showEditModal && selectedRestaurant && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Edit Restaurant</h3>
+              <form onSubmit={handleEditRestaurant} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Restaurant Name *</label>
+                    <input
+                      type="text"
+                      value={selectedRestaurant.name}
+                      onChange={(e) => setSelectedRestaurant({...selectedRestaurant, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cuisine Type *</label>
+                    <select
+                      value={selectedRestaurant.cuisine}
+                      onChange={(e) => setSelectedRestaurant({...selectedRestaurant, cuisine: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    >
+                      <option value="Fine Dining">Fine Dining</option>
+                      <option value="Italian">Italian</option>
+                      <option value="Japanese">Japanese</option>
+                      <option value="Chinese">Chinese</option>
+                      <option value="Mexican">Mexican</option>
+                      <option value="Indian">Indian</option>
+                      <option value="Thai">Thai</option>
+                      <option value="French">French</option>
+                      <option value="Mediterranean">Mediterranean</option>
+                      <option value="American">American</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                  <input
+                    type="text"
+                    value={selectedRestaurant.address}
+                    onChange={(e) => setSelectedRestaurant({...selectedRestaurant, address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                    <input
+                      type="tel"
+                      value={selectedRestaurant.phone}
+                      onChange={(e) => setSelectedRestaurant({...selectedRestaurant, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="5"
+                      value={selectedRestaurant.rating}
+                      onChange={(e) => setSelectedRestaurant({...selectedRestaurant, rating: parseFloat(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
+                  <input
+                    type="url"
+                    value={selectedRestaurant.image}
+                    onChange={(e) => setSelectedRestaurant({...selectedRestaurant, image: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={selectedRestaurant.description}
+                    onChange={(e) => setSelectedRestaurant({...selectedRestaurant, description: e.target.value})}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+                  >
+                    Update Restaurant
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

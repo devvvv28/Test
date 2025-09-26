@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { 
@@ -67,21 +68,21 @@ const AdminOverview = () => {
           totalMenuItems: 0,
           availableTables: 0
         },
-        recentOrders: [],
+              onClick={() => navigate('/admin/orders')}
         recentBookings: []
       });
       setRecentTables([]);
     } finally {
       setIsLoading(false);
     }
-  };
+              onClick={() => navigate('/admin/bookings')}
 
   // Auto-refresh dashboard data
   useEffect(() => {
     const interval = setInterval(() => {
       loadDashboardData();
     }, 60000); // Refresh every minute
-    
+              onClick={() => navigate('/admin/menu')}
     return () => clearInterval(interval);
   }, []);
 
@@ -94,6 +95,8 @@ const AdminOverview = () => {
   }
 
   const stats = dashboardData.stats || {};
+
+  const navigate = useNavigate();
 
   return (
     <div className="space-y-6">

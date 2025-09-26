@@ -689,6 +689,15 @@ router.post('/admin-login', adminLoginValidation, handleValidationErrors, async 
             });
         }
 
+        // Check if restaurant is active
+        if (!restaurant.is_active) {
+            return res.status(403).json({
+                success: false,
+                message: 'Restaurant subscription has expired. Please contact support to reactivate your account.',
+                code: 'SUBSCRIPTION_EXPIRED'
+            });
+        }
+
         // Verify password
         const isValidPassword = await bcrypt.compare(password, restaurant.admin_password_hash);
         if (!isValidPassword) {

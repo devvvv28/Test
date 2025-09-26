@@ -986,4 +986,191 @@ router.get('/bookings', async (req, res) => {
     }
 });
 
+// GET /api/admin/customers - Get restaurant customers
+router.get('/customers', async (req, res) => {
+    try {
+        const restaurantId = req.user.restaurant_id;
+
+        const customers = await db.all(`
+            SELECT DISTINCT 
+                lu.id, lu.name, lu.email, lu.phone, lu.created_at, lu.is_active,
+                COUNT(DISTINCT o.id) as total_orders,
+                SUM(CASE WHEN o.status = 'completed' THEN o.total_amount ELSE 0 END) as total_spent
+            FROM login_users lu
+            LEFT JOIN orders o ON lu.id = o.user_id AND o.restaurant_id = ?
+            LEFT JOIN bookings b ON lu.id = b.user_id AND b.restaurant_id = ?
+            WHERE (o.id IS NOT NULL OR b.id IS NOT NULL)
+            GROUP BY lu.id
+            ORDER BY lu.created_at DESC
+        `, [restaurantId, restaurantId]);
+
+        res.status(200).json({
+            success: true,
+            message: 'Customers retrieved successfully',
+            data: customers
+        });
+
+    } catch (error) {
+        console.error('Get admin customers error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error while fetching customers'
+        });
+    }
+});
+
+// GET /api/admin/analytics - Get restaurant analytics
+router.get('/analytics', async (req, res) => {
+    try {
+        const restaurantId = req.user.restaurant_id;
+        const { range = '7days' } = req.query;
+
+        // Calculate date range
+        let dateFilter = '';
+        switch (range) {
+            case '7days':
+                dateFilter = "AND o.created_at >= date('now', '-7 days')";
+                break;
+            case '30days':
+                dateFilter = "AND o.created_at >= date('now', '-30 days')";
+                break;
+            case '90days':
+                dateFilter = "AND o.created_at >= date('now', '-90 days')";
+                break;
+            case '1year':
+                dateFilter = "AND o.created_at >= date('now', '-1 year')";
+                break;
+        }
+
+        // Get revenue and order analytics
+        const revenueStats = await db.get(`
+            SELECT 
+                SUM(CASE WHEN status = 'completed' THEN total_amount ELSE 0 END) as total,
+                COUNT(*) as order_count,
+                AVG(CASE WHEN status = 'completed' THEN total_amount ELSE NULL END) as avg_value
+            FROM orders o
+            WHERE restaurant_id = ? ${dateFilter}
+        `, [restaurantId]);
+
+        // Get customer analytics
+        const customerStats = await db.get(`
+            SELECT 
+                COUNT(DISTINCT user_id) as new,
+                COUNT(DISTINCT user_id) as total
+            FROM orders o
+            WHERE restaurant_id = ? ${dateFilter}
+        `, [restaurantId]);
+
+        // Get popular items
+        const popularItems = await db.all(`
+            SELECT 
+                mi.name,
+                COUNT(oi.id) as orders,
+                SUM(oi.price * oi.quantity) as revenue,
+                ROUND(COUNT(oi.id) * 100.0 / (SELECT COUNT(*) FROM order_items oi2 JOIN orders o2 ON oi2.order_id = o2.id WHERE o2.restaurant_id = ?), 2) as percentage
+            FROM order_items oi
+            JOIN menu_items mi ON oi.menu_item_id = mi.id
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.restaurant_id = ? ${dateFilter}
+            GROUP BY mi.id, mi.name
+            ORDER BY orders DESC
+            LIMIT 10
+        `, [restaurantId, restaurantId]);
+
+        // Get daily stats
+        const dailyStats = await db.all(`
+            SELECT 
+                date(created_at) as date,
+                COUNT(*) as orders,
+                SUM(CASE WHEN status = 'completed' THEN total_amount ELSE 0 END) as revenue,
+                AVG(CASE WHEN status = 'completed' THEN total_amount ELSE NULL END) as avg_order,
+                COUNT(DISTINCT user_id) as new_customers
+            FROM orders
+            WHERE restaurant_id = ? ${dateFilter}
+            GROUP BY date(created_at)
+            ORDER BY date(created_at) DESC
+            LIMIT 30
+        `, [restaurantId]);
+
+        const analyticsData = {
+            revenue: {
+                total: revenueStats.total || 0,
+                growth: 15.2 // Mock growth percentage
+            },
+            orders: {
+                total: revenueStats.order_count || 0,
+                growth: 8.5,
+                avg_value: revenueStats.avg_value || 0
+            },
+            customers: {
+                new: customerStats.new || 0,
+                growth: 12.3
+            },
+            popular_items: popularItems,
+            daily_stats: dailyStats
+        };
+
+        res.status(200).json({
+            success: true,
+            message: 'Analytics retrieved successfully',
+            data: analyticsData
+        });
+
+    } catch (error) {
+        console.error('Get admin analytics error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error while fetching analytics'
+        });
+    }
+});
+
+// GET /api/admin/notifications - Get restaurant notifications
+router.get('/notifications', async (req, res) => {
+    try {
+        const restaurantId = req.user.restaurant_id;
+
+        // Mock notifications for now
+        const notifications = [
+            {
+                id: 1,
+                title: 'New Order Received',
+                message: 'Order #123 has been placed and needs confirmation',
+                type: 'order',
+                read: false,
+                created_at: new Date(Date.now() - 300000)
+            },
+            {
+                id: 2,
+                title: 'Table Booking Confirmed',
+                message: 'Table 5 has been booked for tonight at 7:00 PM',
+                type: 'booking',
+                read: false,
+                created_at: new Date(Date.now() - 600000)
+            },
+            {
+                id: 3,
+                title: 'Menu Item Updated',
+                message: 'Wagyu Beef Tenderloin price has been updated',
+                type: 'info',
+                read: true,
+                created_at: new Date(Date.now() - 1800000)
+            }
+        ];
+
+        res.status(200).json({
+            success: true,
+            message: 'Notifications retrieved successfully',
+            data: notifications
+        });
+
+    } catch (error) {
+        console.error('Get admin notifications error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error while fetching notifications'
+        });
+    }
+});
+
 module.exports = router;
